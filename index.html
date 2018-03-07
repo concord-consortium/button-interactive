@@ -132,7 +132,7 @@ function initialize(){
   phone.addListener("initInteractive", function (data) {
     msgElement.style.display = "none";
 
-    var authoredState = {};
+    var authoredState = {"url":"https://concord.org", "label": "Open"};
     if(data.authoredState){
       if(typeof data.authoredState == 'string'){
         authoredState = JSON.parse(data.authoredState);
