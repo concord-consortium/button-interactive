@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no">
+  <style>
+    body, html {
+      height: 100%;
+    }
+
+    a {
+       display: none;
+       background-color: rgb(234, 109, 47);
+       border-color: rgb(234, 109, 47);
+       border-style: solid;
+       border-width: 2px;
+       color: rgb(255, 255, 255);
+       font-family: museo-sans, sans-serif;
+       font-size: 18px;
+       font-weight: 700;
+       line-height: 30.6px;
+       outline: 1px dotted #ea6d2f;
+       padding: 15px 20px;
+       text-decoration: none;
+    }
+
+    form {
+      display: none;
+      font-size: 16px;
+      font-family: museo-sans, sans-serif;
+      width: 90%
+    }
+
+    #app {
+      align-items: center;
+      display: flex;
+      justify-content: center;
+      height: 100%;
+    }
+
+    input {
+      font-size: 14px;
+
+      /* To give the same size to all text fields */
+      width: 100%;
+      box-sizing: border-box;
+
+      /* To harmonize the look & feel of text field border */
+      border: 1px solid #999;
+    }
+
+    form div + div {
+      margin-top: 1em;
+    }
+
+  </style>
+</head>
+<body>
+<div id="app">
+  <div id="messages"></div>
+  <a id="button" href="https://concord.org" target="_blank">Open in a new tab</a>
+  <form id="form">
+    <div>
+      <label for="url">URL:</label>
+      <br>
+      <input id="button-url" type="text" name="url">
+    </div>
+    <div>
+      <label for="label">Button Label:</label>
+      <br>
+      <input id="button-label" type="text" name="label" value="Open">
+  </form>
+</div>
+<script src='iframe-phone.js'></script>
+<script>
+var reflow = function() {
+  var elem = document.getElementById("app");
+  elem.style.display='none';
+  elem.offsetHeight; // no need to store this anywhere, the reference is enough
+  elem.style.display='flex';
+}
+
+function initialize(){
+
+  var msgElement = document.getElementById("messages");
+  var buttonElement = document.getElementById("button");
+  var formElement = document.getElementById("form");
+  var buttonURL = document.getElementById("button-url");
+  var buttonLabel = document.getElementById("button-label");
+
+  var render = function(html) {
+    msgElement.innerHTML = html
+  }
+
+  if (window.parent == window){
+    render("<span class='error'>This must be run within a LARA iframe interactive</span>");
+    return;
+  }
+
+  render("Connecting to LARA...");
+  var phone = new iframePhone.getIFrameEndpoint();
+
+  // Let LARA know we are saving authored data
+  phone.post("supportedFeatures", {
+    apiVersion: 1,
+    features: {
+      authoredState: true
+    }
+  });
+
+  var getFormJSON = function () {
+    return {
+      "version": "1.0",
+      "url": buttonURL.value,
+      "label": buttonLabel.value
+    }
+  }
+
+  var postAuthoredState = function () {
+    phone.post("authoredState", getFormJSON())
+  }
+
+  buttonURL.oninput = function () {
+    postAuthoredState();
+  }
+
+  buttonLabel.oninput = function () {
+    postAuthoredState();
+  }
+
+  phone.addListener("initInteractive", function (data) {
+    msgElement.style.display = "none";
+
+    var authoredState = {};
+    if(data.authoredState){
+      if(typeof data.authoredState == 'string'){
+        authoredState = JSON.parse(data.authoredState);
+      } else {
+        authoredState = data.authoredState;
+      }
+    }
+
+    if(data.mode == 'authoring'){
+      formElement.style.display= 'inline';
+      buttonURL.value = authoredState.url;
+      buttonLabel.value = authoredState.label;
+    } else if(data.mode == 'runtime' ){
+      buttonElement.style.display= 'inline';
+      buttonElement.href = authoredState.url;
+      buttonElement.innerHTML = authoredState.label;
+    }
+  });
+
+  phone.initialize()
+
+}
+initialize();
+</script>
+</body>
+</html>
