@@ -9,14 +9,24 @@
       height: 100%;
     }
 
+    #runtime {
+      display: none;
+      font-family: museo-sans, sans-serif;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #description {
+      padding: 20px;
+    }
+
     a {
-       display: none;
+       display: block;
        background-color: rgb(234, 109, 47);
        border-color: rgb(234, 109, 47);
        border-style: solid;
        border-width: 2px;
        color: rgb(255, 255, 255);
-       font-family: museo-sans, sans-serif;
        font-size: 18px;
        font-weight: 700;
        line-height: 30.6px;
@@ -50,6 +60,17 @@
       border: 1px solid #999;
     }
 
+    textarea {
+      font-size: 14px;
+
+      /* To give the same size to all text fields */
+      width: 100%;
+      box-sizing: border-box;
+
+      /* To harmonize the look & feel of text field border */
+      border: 1px solid #999;
+    }
+
     form div + div {
       margin-top: 1em;
     }
@@ -59,8 +80,16 @@
 <body>
 <div id="app">
   <div id="messages"></div>
-  <a id="button" href="https://concord.org" target="_blank">Open in a new tab</a>
+  <div id="runtime">
+    <div id="description"></div>
+    <a id="button" href="https://concord.org" target="_blank">Open in a new tab</a>
+  </div>
   <form id="form">
+    <div>
+      <label for="description">Description:</label>
+      <br>
+      <textarea rows="3" id="button-description" name="description"></textarea>
+    </div>
     <div>
       <label for="url">URL:</label>
       <br>
@@ -84,8 +113,11 @@ var reflow = function() {
 function initialize(){
 
   var msgElement = document.getElementById("messages");
+  var runtimeElement = document.getElementById("runtime");
+  var descriptionElement = document.getElementById("description");
   var buttonElement = document.getElementById("button");
   var formElement = document.getElementById("form");
+  var buttonDescription = document.getElementById("button-description");
   var buttonURL = document.getElementById("button-url");
   var buttonLabel = document.getElementById("button-label");
 
@@ -112,6 +144,7 @@ function initialize(){
   var getFormJSON = function () {
     return {
       "version": "1.0",
+      "description": buttonDescription.value,
       "url": buttonURL.value,
       "label": buttonLabel.value
     }
@@ -119,6 +152,10 @@ function initialize(){
 
   var postAuthoredState = function () {
     phone.post("authoredState", getFormJSON())
+  }
+
+  buttonDescription.oninput = function () {
+    postAuthoredState();
   }
 
   buttonURL.oninput = function () {
@@ -143,10 +180,16 @@ function initialize(){
 
     if(data.mode == 'authoring'){
       formElement.style.display= 'inline';
+      if(authoredState.description){
+        buttonDescription.value = authoredState.description;
+      }
       buttonURL.value = authoredState.url;
       buttonLabel.value = authoredState.label;
     } else if(data.mode == 'runtime' ){
-      buttonElement.style.display= 'inline';
+      runtimeElement.style.display= 'flex';
+      if(authoredState.description){
+        descriptionElement.innerText = authoredState.description;
+      }
       buttonElement.href = authoredState.url;
       buttonElement.innerHTML = authoredState.label;
     }
